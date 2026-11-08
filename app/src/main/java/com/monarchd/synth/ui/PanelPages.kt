@@ -67,7 +67,8 @@ data class PanelMetrics(
     val knob: Dp,
     val largeKnob: Dp,
     val graphHeight: Dp,
-    val compact: Boolean
+    val compact: Boolean,
+    val expanded: Boolean = false
 )
 
 val LocalPanelMetrics = staticCompositionLocalOf {
@@ -84,6 +85,7 @@ fun PanelPager(
     onPanic: () -> Unit,
     soundActive: Boolean,
     copyScope: (FloatArray) -> Unit,
+    tabHeight: Dp,
     modifier: Modifier = Modifier
 ) {
     val pagerState = rememberPagerState(pageCount = { pageTabs.size })
@@ -98,33 +100,35 @@ fun PanelPager(
         ) {
             pageTabs.forEachIndexed { index, tab ->
                 val selected = pagerState.currentPage == index
-                Column(
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { scope.launch { pagerState.animateScrollToPage(index) } }
-                        .padding(top = 3.dp, bottom = 2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .height(tabHeight)
+                        .clickable { scope.launch { pagerState.animateScrollToPage(index) } },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = tab,
-                        color = if (selected) AmberBright else CreamFaint,
-                        fontFamily = PanelFont,
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                        fontSize = 8.sp,
-                        letterSpacing = 1.4.sp,
-                        maxLines = 1
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    val underline by animateDpAsState(
-                        targetValue = if (selected) 26.dp else 0.dp,
-                        label = "pageUnderline"
-                    )
-                    Box(
-                        Modifier
-                            .height(1.5.dp)
-                            .width(underline)
-                            .background(if (selected) Amber else androidx.compose.ui.graphics.Color.Transparent)
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = tab,
+                            color = if (selected) AmberBright else CreamFaint,
+                            fontFamily = PanelFont,
+                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                            fontSize = 8.sp,
+                            letterSpacing = 1.4.sp,
+                            maxLines = 1
+                        )
+                        Spacer(Modifier.height(2.dp))
+                        val underline by animateDpAsState(
+                            targetValue = if (selected) 26.dp else 0.dp,
+                            label = "pageUnderline"
+                        )
+                        Box(
+                            Modifier
+                                .height(1.5.dp)
+                                .width(underline)
+                                .background(if (selected) Amber else androidx.compose.ui.graphics.Color.Transparent)
+                        )
+                    }
                 }
             }
         }
@@ -157,14 +161,30 @@ fun PanelPager(
 
 @Composable
 private fun PageScroll(content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 9.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        content = content
-    )
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val roomy = maxWidth >= 1000.dp
+        if (roomy) {
+            // On a tablet the extra height is part of the instrument, not a
+            // scroll region. Centre the section plates and keep the keyboard
+            // anchored at the bottom.
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 10.dp),
+                verticalArrangement = Arrangement.Center,
+                content = content
+            )
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(start = 12.dp, end = 12.dp, top = 7.dp, bottom = 9.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                content = content
+            )
+        }
+    }
 }
 
 // ── Oscillators ───────────────────────────────────────────────────────────────
@@ -293,11 +313,11 @@ private fun OscillatorCard(
             if (tune != null) {
                 SynthKnob(
                     label = tuneLabel,
-                    value = tune,
-                    onValueChange = onTune,
+                    value = Maps.bipolarToUnit(tune),
+                    onValueChange = { onTune(Maps.unitToBipolar(it)) },
                     modifier = Modifier.weight(1f),
                     diameter = metrics.knob,
-                    defaultValue = 0f,
+                    defaultValue = 0.5f,
                     valueText = tuneText
                 )
             }
@@ -328,7 +348,55 @@ private fun MixerPage(
     copyScope: (FloatArray) -> Unit
 ) {
     val metrics = LocalPanelMetrics.current
-    SectionPlate(title = "Mixer", subtitle = "OSC 1 · 2 · 3 · NOISE · DRIVE") {
+    BoxWithConstraints(
+        if (metrics.expanded) Modifier.fillMaxSize() else Modifier.fillMaxWidth()
+    ) {
+        val wide = maxWidth >= 540.dp
+        if (wide) {
+            // Landscape has wide, shallow pages. Put the mixer beside the
+            // output stage instead of stacking two full-width rows, which
+            // used to push the master controls under the keyboard.
+            Row(
+                Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                MixerLevels(
+                    patch = patch,
+                    onPatch = onPatch,
+                    modifier = Modifier.weight(2.05f).fillMaxHeight()
+                )
+                OutputPlate(
+                    patch = patch,
+                    onPatch = onPatch,
+                    soundActive = soundActive,
+                    copyScope = copyScope,
+                    includeSignal = true,
+                    modifier = Modifier.weight(1f).fillMaxHeight()
+                )
+            }
+        } else {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                MixerLevels(patch, onPatch, Modifier.fillMaxWidth())
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutputPlate(
+                        patch = patch,
+                        onPatch = onPatch,
+                        soundActive = soundActive,
+                        copyScope = copyScope,
+                        includeSignal = false,
+                        modifier = Modifier.weight(1.15f).fillMaxHeight()
+                    )
+                    SignalPlate(soundActive, Modifier.weight(0.85f).fillMaxHeight())
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MixerLevels(patch: Patch, onPatch: (Patch) -> Unit, modifier: Modifier) {
+    val metrics = LocalPanelMetrics.current
+    SectionPlate(title = "Mixer", subtitle = "OSC 1 · 2 · 3 · NOISE · DRIVE", modifier = modifier) {
         Row(Modifier.fillMaxWidth()) {
             SynthKnob("OSC 1", patch.osc1Level, { onPatch(patch.copy(osc1Level = it)) }, Modifier.weight(1f), metrics.knob, 0.78f, Fmt.percent(patch.osc1Level))
             SynthKnob("OSC 2", patch.osc2Level, { onPatch(patch.copy(osc2Level = it)) }, Modifier.weight(1f), metrics.knob, 0.55f, Fmt.percent(patch.osc2Level))
@@ -346,55 +414,83 @@ private fun MixerPage(
             maxLines = 1
         )
     }
+}
 
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionPlate(title = "Output", subtitle = "VCA", modifier = Modifier.weight(1.15f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                SynthKnob(
-                    label = "MASTER",
-                    value = patch.masterVolume,
-                    onValueChange = { onPatch(patch.copy(masterVolume = it)) },
-                    modifier = Modifier.weight(1f),
-                    diameter = metrics.knob,
-                    defaultValue = 0.78f,
-                    valueText = Fmt.percent(patch.masterVolume)
+@Composable
+private fun OutputPlate(
+    patch: Patch,
+    onPatch: (Patch) -> Unit,
+    soundActive: Boolean,
+    copyScope: (FloatArray) -> Unit,
+    includeSignal: Boolean,
+    modifier: Modifier
+) {
+    val metrics = LocalPanelMetrics.current
+    SectionPlate(title = "Output", subtitle = "VCA", modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SynthKnob(
+                label = "MASTER",
+                value = patch.masterVolume,
+                onValueChange = { onPatch(patch.copy(masterVolume = it)) },
+                modifier = Modifier.weight(1f),
+                diameter = metrics.knob,
+                defaultValue = 0.78f,
+                valueText = Fmt.percent(patch.masterVolume)
+            )
+            Column(Modifier.weight(1.25f), horizontalAlignment = Alignment.CenterHorizontally) {
+                OutputMeter(
+                    active = soundActive,
+                    copyScope = copyScope,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(if (metrics.compact) 30.dp else 38.dp)
                 )
-                Column(Modifier.weight(1.25f), horizontalAlignment = Alignment.CenterHorizontally) {
-                    OutputMeter(
-                        active = soundActive,
-                        copyScope = copyScope,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(if (metrics.compact) 30.dp else 38.dp)
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = if (soundActive) "SIGNAL" else "IDLE",
-                        color = if (soundActive) Amber else CreamFaint,
-                        fontFamily = PanelFont,
-                        fontSize = 6.5.sp,
-                        letterSpacing = 1.2.sp
-                    )
-                }
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = if (soundActive) "SIGNAL" else "IDLE",
+                    color = if (soundActive) Amber else CreamFaint,
+                    fontFamily = PanelFont,
+                    fontSize = 6.5.sp,
+                    letterSpacing = 1.2.sp
+                )
             }
         }
-        SectionPlate(title = "Signal", subtitle = "MONO", modifier = Modifier.weight(0.85f)) {
+        if (includeSignal) {
+            Spacer(Modifier.height(5.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                LedIndicator(soundActive, Modifier.size(5.dp))
+                LedIndicator(soundActive, Modifier.size(4.dp))
                 Spacer(Modifier.width(5.dp))
                 Text(
-                    text = "LAST NOTE",
-                    color = CreamDim,
+                    text = "LAST NOTE · 3 VCO · LADDER",
+                    color = CreamFaint,
                     fontFamily = PanelFont,
-                    fontSize = 7.sp,
-                    letterSpacing = 0.8.sp
+                    fontSize = 6.sp,
+                    letterSpacing = 0.5.sp,
+                    maxLines = 1
                 )
             }
-            Spacer(Modifier.height(5.dp))
-            Text("3 × VCO", color = Cream, fontFamily = PanelFont, fontSize = 7.5.sp, letterSpacing = 0.8.sp)
-            Text("4-POLE LADDER", color = CreamDim, fontFamily = PanelFont, fontSize = 7.sp, letterSpacing = 0.6.sp)
-            Text("32-BIT FLOAT", color = CreamFaint, fontFamily = PanelFont, fontSize = 6.5.sp, letterSpacing = 0.6.sp)
         }
+    }
+}
+
+@Composable
+private fun SignalPlate(soundActive: Boolean, modifier: Modifier) {
+    SectionPlate(title = "Signal", subtitle = "MONO", modifier = modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            LedIndicator(soundActive, Modifier.size(5.dp))
+            Spacer(Modifier.width(5.dp))
+            Text(
+                text = "LAST NOTE",
+                color = CreamDim,
+                fontFamily = PanelFont,
+                fontSize = 7.sp,
+                letterSpacing = 0.8.sp
+            )
+        }
+        Spacer(Modifier.height(5.dp))
+        Text("3 × VCO", color = Cream, fontFamily = PanelFont, fontSize = 7.5.sp, letterSpacing = 0.8.sp)
+        Text("4-POLE LADDER", color = CreamDim, fontFamily = PanelFont, fontSize = 7.sp, letterSpacing = 0.6.sp)
+        Text("32-BIT FLOAT", color = CreamFaint, fontFamily = PanelFont, fontSize = 6.5.sp, letterSpacing = 0.6.sp)
     }
 }
 
@@ -402,11 +498,16 @@ private fun MixerPage(
 
 @Composable
 private fun FilterPage(patch: Patch, onPatch: (Patch) -> Unit) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val expanded = LocalPanelMetrics.current.expanded
+    BoxWithConstraints(if (expanded) Modifier.fillMaxSize() else Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 540.dp
         if (wide) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                modifier = if (expanded) {
+                    Modifier.fillMaxSize()
+                } else {
+                    Modifier.fillMaxWidth().height(IntrinsicSize.Max)
+                },
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterControls(patch, onPatch, Modifier.weight(1f).fillMaxHeight())
@@ -454,7 +555,7 @@ private fun FilterControls(patch: Patch, onPatch: (Patch) -> Unit, modifier: Mod
                 valueText = Fmt.percent(patch.contourAmount)
             )
         }
-        Spacer(Modifier.height(5.dp))
+        Spacer(if (metrics.expanded) Modifier.weight(1f) else Modifier.height(5.dp))
         Text(
             text = "KEYBOARD TRACKING",
             color = CreamFaint,
@@ -484,6 +585,7 @@ private fun FilterControls(patch: Patch, onPatch: (Patch) -> Unit, modifier: Mod
                 letterSpacing = 1.sp
             )
         }
+        if (metrics.expanded) Spacer(Modifier.weight(0.35f))
     }
 }
 
@@ -500,7 +602,10 @@ private fun FilterDisplay(patch: Patch, modifier: Modifier) {
             resonance = patch.emphasis,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(metrics.graphHeight)
+                .then(
+                    if (metrics.expanded) Modifier.weight(1f)
+                    else Modifier.height(metrics.graphHeight)
+                )
         )
         Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -521,11 +626,16 @@ private fun FilterDisplay(patch: Patch, modifier: Modifier) {
 
 @Composable
 private fun EnvelopePage(patch: Patch, onPatch: (Patch) -> Unit) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val expanded = LocalPanelMetrics.current.expanded
+    BoxWithConstraints(if (expanded) Modifier.fillMaxSize() else Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 540.dp
         if (wide) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                modifier = if (expanded) {
+                    Modifier.fillMaxSize()
+                } else {
+                    Modifier.fillMaxWidth().height(IntrinsicSize.Max)
+                },
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterEnvelopePlate(patch, onPatch, Modifier.weight(1f).fillMaxHeight())
@@ -553,7 +663,10 @@ private fun FilterEnvelopePlate(patch: Patch, onPatch: (Patch) -> Unit, modifier
             decayEnabled = patch.filterDecayOn,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(metrics.graphHeight)
+                .then(
+                    if (metrics.expanded) Modifier.weight(1f)
+                    else Modifier.height(metrics.graphHeight)
+                )
         )
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth()) {
@@ -616,7 +729,10 @@ private fun LoudnessEnvelopePlate(patch: Patch, onPatch: (Patch) -> Unit, modifi
             decayEnabled = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(metrics.graphHeight)
+                .then(
+                    if (metrics.expanded) Modifier.weight(1f)
+                    else Modifier.height(metrics.graphHeight)
+                )
         )
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth()) {
@@ -687,11 +803,16 @@ private fun PerformancePage(
     onRandomize: () -> Unit,
     onPanic: () -> Unit
 ) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
+    val expanded = LocalPanelMetrics.current.expanded
+    BoxWithConstraints(if (expanded) Modifier.fillMaxSize() else Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 540.dp
         if (wide) {
             Row(
-                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                modifier = if (expanded) {
+                    Modifier.fillMaxSize()
+                } else {
+                    Modifier.fillMaxWidth().height(IntrinsicSize.Max)
+                },
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ModulationPlate(patch, onPatch, Modifier.weight(1f).fillMaxHeight())
@@ -739,7 +860,7 @@ private fun ModulationPlate(patch: Patch, onPatch: (Patch) -> Unit, modifier: Mo
                 Fmt.percent(patch.drift)
             )
         }
-        Spacer(Modifier.height(3.dp))
+        Spacer(if (metrics.expanded) Modifier.weight(1f) else Modifier.height(3.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("OSC 3", color = CreamFaint, fontFamily = PanelFont, fontSize = 6.sp)
             Text("NOISE", color = CreamFaint, fontFamily = PanelFont, fontSize = 6.sp)
@@ -766,11 +887,11 @@ private fun InstrumentPlate(
         Row(Modifier.fillMaxWidth()) {
             SynthKnob(
                 "TUNE",
-                patch.masterTune,
-                { onPatch(patch.copy(masterTune = it)) },
+                Maps.bipolarToUnit(patch.masterTune),
+                { onPatch(patch.copy(masterTune = Maps.unitToBipolar(it))) },
                 Modifier.weight(1f),
                 LocalPanelMetrics.current.knob,
-                0f,
+                0.5f,
                 Fmt.masterTune(patch.masterTune)
             )
             Column(Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -780,7 +901,7 @@ private fun InstrumentPlate(
                 InfoLine("NO SAMPLES · NO NETWORK", Amber)
             }
         }
-        Spacer(Modifier.height(7.dp))
+        Spacer(if (LocalPanelMetrics.current.expanded) Modifier.weight(1f) else Modifier.height(7.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             EngravedButton("RANDOM PATCH", onRandomize, Modifier.weight(1.2f), accent = true)
             EngravedButton("PANIC", onPanic, Modifier.weight(1f))

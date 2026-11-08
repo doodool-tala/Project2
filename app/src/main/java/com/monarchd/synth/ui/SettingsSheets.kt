@@ -34,10 +34,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.monarchd.synth.BuildConfig
 import com.monarchd.synth.model.AppSettings
 import com.monarchd.synth.ui.components.EngravedButton
 import com.monarchd.synth.ui.components.LogoMark
@@ -74,103 +77,154 @@ fun SettingsSheet(
         contentColor = Cream,
         scrimColor = Color.Black.copy(alpha = 0.62f)
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-                .padding(bottom = 26.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            SheetHeader(
-                title = "SETTINGS",
-                subtitle = "MONARCH D · VERSION 1.0.0",
-                onDismiss = onDismiss
-            )
-            Spacer(Modifier.height(14.dp))
+        BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            val twoColumn = maxWidth >= 560.dp
+            Column(
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp)
+                    .padding(bottom = 14.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                SheetHeader(
+                    title = "SETTINGS",
+                    subtitle = "MONARCH D · VERSION ${BuildConfig.VERSION_NAME.removeSuffix("-debug")}",
+                    onDismiss = onDismiss
+                )
+                Spacer(Modifier.height(12.dp))
 
-            SectionCaption("INTERFACE")
-            SettingToggleRow(
-                title = "HAPTIC FEEDBACK",
-                description = "A subtle physical tick when you turn a control or press a key.",
-                checked = settings.haptics,
-                onCheckedChange = { value -> onChange { it.copy(haptics = value) } }
-            )
-            SettingToggleRow(
-                title = "KEY NAMES",
-                description = "Print note names on the C keys of the keyboard.",
-                checked = settings.showKeyLabels,
-                onCheckedChange = { value -> onChange { it.copy(showKeyLabels = value) } }
-            )
-
-            Spacer(Modifier.height(10.dp))
-            Divider()
-            Spacer(Modifier.height(10.dp))
-            SectionCaption("AUDIO ENGINE")
-            Text(
-                text = audioSummary,
-                color = Amber,
-                fontFamily = ReadoutFont,
-                fontSize = 9.sp,
-                letterSpacing = 0.3.sp
-            )
-            Spacer(Modifier.height(5.dp))
-            Text(
-                text = "Real-time synthesis at the device's native sample rate. Three band-limited oscillators feed a 2x oversampled nonlinear transistor ladder, followed by two analog-modeled contours. No samples and no network.",
-                color = CreamDim,
-                fontFamily = PanelFont,
-                fontSize = 11.sp,
-                lineHeight = 14.sp
-            )
-            Spacer(Modifier.height(10.dp))
-            EngravedButton(
-                text = "PANIC · RELEASE ALL NOTES",
-                onClick = onPanic,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(Modifier.height(12.dp))
-            Divider()
-            Spacer(Modifier.height(12.dp))
-            SectionCaption("ABOUT")
-            Text(
-                text = "MONARCH D",
-                color = Cream,
-                fontFamily = DisplayFont,
-                fontSize = 24.sp,
-                letterSpacing = 4.sp
-            )
-            Text(
-                text = "A modern monophonic instrument inspired by the golden age of American analog synthesis: three oscillators, a 24 dB/oct transistor ladder, and two envelope contours with a very definite personality.",
-                color = CreamDim,
-                fontFamily = PanelFont,
-                fontSize = 11.sp,
-                lineHeight = 14.sp
-            )
-            Spacer(Modifier.height(7.dp))
-            Text(
-                text = "Every note is synthesised on your device. No samples, no accounts, no analytics, no network permissions.",
-                color = CreamFaint,
-                fontFamily = PanelFont,
-                fontSize = 10.sp,
-                lineHeight = 13.sp
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = "Barlow Condensed · SIL Open Font License 1.1",
-                color = CreamFaint,
-                fontFamily = PanelFont,
-                fontSize = 7.5.sp,
-                letterSpacing = 0.4.sp
-            )
-            Text(
-                text = "© 2026 Monarch Instruments",
-                color = CreamFaint,
-                fontFamily = PanelFont,
-                fontSize = 7.5.sp,
-                letterSpacing = 0.4.sp
-            )
+                if (twoColumn) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            SettingsInterface(settings, onChange)
+                            Spacer(Modifier.height(10.dp))
+                            Divider()
+                            Spacer(Modifier.height(10.dp))
+                            SettingsAudio(audioSummary, onPanic, showPanic = false)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            SettingsAbout()
+                            Spacer(Modifier.height(8.dp))
+                            EngravedButton(
+                                text = "PANIC · RELEASE ALL NOTES",
+                                onClick = onPanic,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+                } else {
+                    SettingsInterface(settings, onChange)
+                    Spacer(Modifier.height(10.dp))
+                    Divider()
+                    Spacer(Modifier.height(10.dp))
+                    SettingsAudio(audioSummary, onPanic)
+                    Spacer(Modifier.height(12.dp))
+                    Divider()
+                    Spacer(Modifier.height(12.dp))
+                    SettingsAbout()
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun SettingsInterface(
+    settings: AppSettings,
+    onChange: ((AppSettings) -> AppSettings) -> Unit
+) {
+    SectionCaption("INTERFACE")
+    SettingToggleRow(
+        title = "HAPTIC FEEDBACK",
+        description = "A subtle physical tick when you turn a control or press a key.",
+        checked = settings.haptics,
+        onCheckedChange = { value -> onChange { it.copy(haptics = value) } }
+    )
+    SettingToggleRow(
+        title = "KEY NAMES",
+        description = "Print note names on the C keys of the keyboard.",
+        checked = settings.showKeyLabels,
+        onCheckedChange = { value -> onChange { it.copy(showKeyLabels = value) } }
+    )
+}
+
+@Composable
+private fun SettingsAudio(
+    audioSummary: String,
+    onPanic: () -> Unit,
+    showPanic: Boolean = true
+) {
+    SectionCaption("AUDIO ENGINE")
+    Text(
+        text = audioSummary,
+        color = Amber,
+        fontFamily = ReadoutFont,
+        fontSize = 9.sp,
+        letterSpacing = 0.3.sp
+    )
+    Spacer(Modifier.height(5.dp))
+    Text(
+        text = "Real-time synthesis at the device's native sample rate. Three band-limited oscillators feed a 2x oversampled nonlinear transistor ladder, followed by two analog-modeled contours. No samples and no network.",
+        color = CreamDim,
+        fontFamily = PanelFont,
+        fontSize = 11.sp,
+        lineHeight = 14.sp
+    )
+    if (showPanic) {
+        Spacer(Modifier.height(10.dp))
+        EngravedButton(
+            text = "PANIC · RELEASE ALL NOTES",
+            onClick = onPanic,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+
+@Composable
+private fun SettingsAbout() {
+    SectionCaption("ABOUT")
+    Text(
+        text = "MONARCH D",
+        color = Cream,
+        fontFamily = DisplayFont,
+        fontSize = 24.sp,
+        letterSpacing = 4.sp
+    )
+    Text(
+        text = "A modern monophonic instrument inspired by the golden age of American analog synthesis: three oscillators, a 24 dB/oct transistor ladder, and two envelope contours with a very definite personality.",
+        color = CreamDim,
+        fontFamily = PanelFont,
+        fontSize = 11.sp,
+        lineHeight = 14.sp
+    )
+    Spacer(Modifier.height(7.dp))
+    Text(
+        text = "Every note is synthesised on your device. No samples, no accounts, no analytics, no network permissions.",
+        color = CreamFaint,
+        fontFamily = PanelFont,
+        fontSize = 10.sp,
+        lineHeight = 13.sp
+    )
+    Spacer(Modifier.height(8.dp))
+    Text(
+        text = "Barlow Condensed · SIL Open Font License 1.1",
+        color = CreamFaint,
+        fontFamily = PanelFont,
+        fontSize = 7.5.sp,
+        letterSpacing = 0.4.sp
+    )
+    Text(
+        text = "© 2026 Monarch Instruments",
+        color = CreamFaint,
+        fontFamily = PanelFont,
+        fontSize = 7.5.sp,
+        letterSpacing = 0.4.sp
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -184,68 +238,76 @@ fun HelpSheet(onDismiss: () -> Unit) {
         contentColor = Cream,
         scrimColor = Color.Black.copy(alpha = 0.62f)
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-                .padding(bottom = 26.dp)
-                .verticalScroll(rememberScrollState())
-        ) {
-            SheetHeader(
-                title = "HOW TO PLAY",
-                subtitle = "QUICK START",
-                onDismiss = onDismiss
-            )
-            Spacer(Modifier.height(12.dp))
-            HelpRow(
-                number = "01",
-                title = "SHAPE THE SOUND",
-                body = "Drag any knob vertically, or sideways for fine adjustment. Double-tap a knob to return it to its factory position."
-            )
-            HelpRow(
-                number = "02",
-                title = "MOVE AROUND THE PANEL",
-                body = "Swipe the panel sideways or tap the engraved OSC / MIX / FILTER / ENV / PERF tabs. Five sections hold the entire instrument."
-            )
-            HelpRow(
-                number = "03",
-                title = "PLAY",
-                body = "Slide across the keyboard for a glissando. The instrument is monophonic with last-note priority, just like the originals. Use the octave arrows to travel further."
-            )
-            HelpRow(
-                number = "04",
-                title = "BEND AND BREATHE",
-                body = "The left wheel bends pitch and springs back. The right wheel adds vibrato and filter movement; it stays where you leave it."
-            )
-            HelpRow(
-                number = "05",
-                title = "KEEP YOUR SOUNDS",
-                body = "Tap the preset name to browse the library, then use SAVE CURRENT to keep a patch of your own. SURPRISE ME generates a new musical starting point."
-            )
-            Spacer(Modifier.height(8.dp))
-            Box(
+        BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            val twoColumn = maxWidth >= 560.dp
+            Column(
                 Modifier
+                    .widthIn(max = 760.dp)
                     .fillMaxWidth()
-                    .background(Amber.copy(alpha = 0.07f), RoundedCornerShape(4.dp))
-                    .border(1.dp, AmberDeep.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
-                    .padding(10.dp)
+                    .padding(horizontal = 18.dp)
+                    .padding(bottom = 14.dp)
+                    .verticalScroll(rememberScrollState())
             ) {
-                Text(
-                    text = "TIP · Headphones or a wired speaker give the lowest latency and the deepest bass. The engine uses your device's native output rate.",
-                    color = CreamDim,
-                    fontFamily = PanelFont,
-                    fontSize = 10.sp,
-                    lineHeight = 13.sp
+                SheetHeader(
+                    title = "HOW TO PLAY",
+                    subtitle = "QUICK START",
+                    onDismiss = onDismiss
+                )
+                Spacer(Modifier.height(10.dp))
+                if (twoColumn) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(24.dp),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            HelpRow("01", "SHAPE THE SOUND", "Drag any knob vertically, or sideways for fine adjustment. Double-tap a knob to return it to its factory position.")
+                            HelpRow("02", "MOVE AROUND THE PANEL", "Swipe the panel sideways or tap the engraved OSC / MIX / FILTER / ENV / PERF tabs. Five sections hold the entire instrument.")
+                            HelpRow("03", "PLAY", "Slide across the keyboard for a glissando. The instrument is monophonic with last-note priority, just like the originals. Use the octave arrows to travel further.")
+                        }
+                        Column(Modifier.weight(1f)) {
+                            HelpRow("04", "BEND AND BREATHE", "The left wheel bends pitch and springs back. The right wheel adds vibrato and filter movement; it stays where you leave it.")
+                            HelpRow("05", "KEEP YOUR SOUNDS", "Tap the preset name to browse the library, then use SAVE CURRENT to keep a patch of your own. SURPRISE ME generates a new musical starting point.")
+                            HelpTip()
+                        }
+                    }
+                } else {
+                    HelpRow("01", "SHAPE THE SOUND", "Drag any knob vertically, or sideways for fine adjustment. Double-tap a knob to return it to its factory position.")
+                    HelpRow("02", "MOVE AROUND THE PANEL", "Swipe the panel sideways or tap the engraved OSC / MIX / FILTER / ENV / PERF tabs. Five sections hold the entire instrument.")
+                    HelpRow("03", "PLAY", "Slide across the keyboard for a glissando. The instrument is monophonic with last-note priority, just like the originals. Use the octave arrows to travel further.")
+                    HelpRow("04", "BEND AND BREATHE", "The left wheel bends pitch and springs back. The right wheel adds vibrato and filter movement; it stays where you leave it.")
+                    HelpRow("05", "KEEP YOUR SOUNDS", "Tap the preset name to browse the library, then use SAVE CURRENT to keep a patch of your own. SURPRISE ME generates a new musical starting point.")
+                    HelpTip()
+                }
+                Spacer(Modifier.height(10.dp))
+                EngravedButton(
+                    text = "GOT IT",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth(),
+                    accent = true
                 )
             }
-            Spacer(Modifier.height(12.dp))
-            EngravedButton(
-                text = "GOT IT",
-                onClick = onDismiss,
-                modifier = Modifier.fillMaxWidth(),
-                accent = true
-            )
         }
+    }
+}
+
+@Composable
+private fun HelpTip() {
+    Spacer(Modifier.height(6.dp))
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(Amber.copy(alpha = 0.07f), RoundedCornerShape(4.dp))
+            .border(1.dp, AmberDeep.copy(alpha = 0.35f), RoundedCornerShape(4.dp))
+            .padding(10.dp)
+    ) {
+        Text(
+            text = "TIP · Headphones or a wired speaker give the lowest latency and the deepest bass. The engine uses your device's native output rate.",
+            color = CreamDim,
+            fontFamily = PanelFont,
+            fontSize = 10.sp,
+            lineHeight = 13.sp
+        )
     }
 }
 
@@ -271,11 +333,12 @@ private fun SheetHeader(title: String, subtitle: String, onDismiss: () -> Unit) 
         }
         Box(
             Modifier
-                .size(30.dp)
+                .size(44.dp)
                 .clip(CircleShape)
                 .background(PanelInset)
                 .border(1.dp, PanelEdge.copy(alpha = 0.5f), CircleShape)
-                .pointerInput(Unit) { detectTapGestures { onDismiss() } },
+                .pointerInput(Unit) { detectTapGestures { onDismiss() } }
+                .semantics { contentDescription = "Close" },
             contentAlignment = Alignment.Center
         ) {
             Text(

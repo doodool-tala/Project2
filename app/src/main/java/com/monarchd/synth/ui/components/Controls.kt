@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -164,7 +165,8 @@ fun EngravedButton(
                 RoundedCornerShape(4.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .heightIn(min = 40.dp)
+            .padding(horizontal = 12.dp, vertical = 9.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(

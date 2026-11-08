@@ -126,6 +126,11 @@ object Maps {
 
     fun oscTuneSemitones(v: Float): Float = v.coerceIn(-1f, 1f) * 7f
 
+    /** Panel knobs use 0..1; tune parameters are centre-zero -1..1. */
+    fun bipolarToUnit(v: Float): Float = ((v.coerceIn(-1f, 1f) + 1f) / 2f)
+
+    fun unitToBipolar(v: Float): Float = v.coerceIn(0f, 1f) * 2f - 1f
+
     fun masterTuneSemitones(v: Float): Float = v.coerceIn(-1f, 1f) * 2f
 
     fun glideSeconds(v: Float): Float = v.coerceIn(0f, 1f).let { it * it * 1.6f }

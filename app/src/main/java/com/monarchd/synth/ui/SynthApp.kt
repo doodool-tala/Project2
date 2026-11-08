@@ -115,13 +115,16 @@ fun SynthApp(viewModel: SynthViewModel, enableAudio: Boolean = true) {
     CompositionLocalProvider(LocalHapticsEnabled provides settings.haptics) {
         BoxWithConstraints(Modifier.fillMaxSize().background(Ink)) {
             val landscape = maxWidth > maxHeight
-            val metrics = if (landscape) {
-                PanelMetrics(knob = 42.dp, largeKnob = 58.dp, graphHeight = 54.dp, compact = true)
-            } else {
-                PanelMetrics(knob = 50.dp, largeKnob = 72.dp, graphHeight = 78.dp, compact = false)
+            val tablet = maxWidth >= 1000.dp
+            val compactChrome = landscape && !tablet
+            val metrics = when {
+                tablet -> PanelMetrics(knob = 60.dp, largeKnob = 82.dp, graphHeight = 96.dp, compact = false, expanded = true)
+                landscape -> PanelMetrics(knob = 42.dp, largeKnob = 58.dp, graphHeight = 54.dp, compact = true)
+                else -> PanelMetrics(knob = 50.dp, largeKnob = 72.dp, graphHeight = 78.dp, compact = false)
             }
             val keyboardHeight = when {
-                landscape && maxHeight < 380.dp -> 78.dp
+                tablet -> 128.dp
+                landscape && maxHeight < 430.dp -> 78.dp
                 landscape -> 92.dp
                 maxHeight < 700.dp -> 108.dp
                 else -> 128.dp
@@ -142,6 +145,7 @@ fun SynthApp(viewModel: SynthViewModel, enableAudio: Boolean = true) {
                     TopBar(
                         patch = viewModel.patch,
                         active = soundActive,
+                        compact = compactChrome,
                         onOpenLibrary = { showLibrary = true },
                         onOpenSettings = { showSettings = true },
                         onOpenHelp = { showHelp = true }
@@ -153,11 +157,17 @@ fun SynthApp(viewModel: SynthViewModel, enableAudio: Boolean = true) {
                         onPanic = viewModel::panic,
                         soundActive = soundActive,
                         copyScope = viewModel::copyScope,
+                        tabHeight = when {
+                            tablet -> 40.dp
+                            compactChrome -> 32.dp
+                            else -> 34.dp
+                        },
                         modifier = Modifier.weight(1f)
                     )
                     BottomDock(
                         audioActive = soundActive,
                         copyScope = viewModel::copyScope,
+                        compactChrome = compactChrome,
                         keyHeight = keyboardHeight,
                         keyCount = keyCount,
                         baseMidi = baseMidi,
@@ -225,6 +235,7 @@ fun SynthApp(viewModel: SynthViewModel, enableAudio: Boolean = true) {
 private fun TopBar(
     patch: Patch,
     active: Boolean,
+    compact: Boolean,
     onOpenLibrary: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenHelp: () -> Unit
@@ -233,7 +244,7 @@ private fun TopBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(46.dp)
+                .height(if (compact) 46.dp else 48.dp)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -260,14 +271,15 @@ private fun TopBar(
             Spacer(Modifier.width(6.dp))
             PresetChip(
                 patch = patch,
+                compact = compact,
                 modifier = Modifier.weight(1f),
                 onClick = onOpenLibrary
             )
             Spacer(Modifier.width(5.dp))
             LedIndicator(active, Modifier.size(5.dp))
             Spacer(Modifier.width(2.dp))
-            TopIcon(Icons.Outlined.Info, "How to play", onOpenHelp)
-            TopIcon(Icons.Outlined.Settings, "Settings", onOpenSettings)
+            TopIcon(Icons.Outlined.Info, "How to play", compact, onOpenHelp)
+            TopIcon(Icons.Outlined.Settings, "Settings", compact, onOpenSettings)
         }
         Box(
             Modifier
@@ -283,10 +295,15 @@ private fun TopBar(
 }
 
 @Composable
-private fun PresetChip(patch: Patch, modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun PresetChip(
+    patch: Patch,
+    compact: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     Row(
         modifier = modifier
-            .height(32.dp)
+            .height(if (compact) 36.dp else 40.dp)
             .clip(RoundedCornerShape(3.dp))
             .background(PanelInset)
             .border(1.dp, PanelEdge.copy(alpha = 0.65f), RoundedCornerShape(3.dp))
@@ -328,11 +345,15 @@ private fun PresetChip(patch: Patch, modifier: Modifier = Modifier, onClick: () 
 }
 
 @Composable
-private fun TopIcon(icon: VectorIcon, description: String, onClick: () -> Unit) {
+private fun TopIcon(
+    icon: VectorIcon,
+    description: String,
+    compact: Boolean,
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
-            .width(30.dp)
-            .height(38.dp)
+            .size(if (compact) 40.dp else 44.dp)
             .clip(RoundedCornerShape(3.dp))
             .clickable(onClick = onClick)
             .semantics {
@@ -354,6 +375,7 @@ private fun TopIcon(icon: VectorIcon, description: String, onClick: () -> Unit) 
 private fun BottomDock(
     audioActive: Boolean,
     copyScope: (FloatArray) -> Unit,
+    compactChrome: Boolean,
     keyHeight: Dp,
     keyCount: Int,
     baseMidi: Int,
@@ -370,7 +392,7 @@ private fun BottomDock(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(24.dp)
+                .height(if (compactChrome) 28.dp else 32.dp)
                 .padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -387,11 +409,12 @@ private fun BottomDock(
                 copyScope = copyScope,
                 modifier = Modifier
                     .weight(1f)
-                    .height(15.dp)
+                    .height(if (compactChrome) 16.dp else 18.dp)
             )
             Spacer(Modifier.width(10.dp))
             OctaveStepper(
                 octaveShift = octaveShift,
+                compact = compactChrome,
                 onShift = onOctaveShift
             )
         }
@@ -427,9 +450,9 @@ private fun BottomDock(
 }
 
 @Composable
-private fun OctaveStepper(octaveShift: Int, onShift: (Int) -> Unit) {
+private fun OctaveStepper(octaveShift: Int, compact: Boolean, onShift: (Int) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        StepButton("−", enabled = octaveShift > -2) { onShift(-1) }
+        StepButton("−", enabled = octaveShift > -2, compact = compact) { onShift(-1) }
         Text(
             text = "C${3 + octaveShift}",
             color = CreamDim,
@@ -438,15 +461,15 @@ private fun OctaveStepper(octaveShift: Int, onShift: (Int) -> Unit) {
             letterSpacing = 0.3.sp,
             modifier = Modifier.padding(horizontal = 5.dp)
         )
-        StepButton("+", enabled = octaveShift < 2) { onShift(1) }
+        StepButton("+", enabled = octaveShift < 2, compact = compact) { onShift(1) }
     }
 }
 
 @Composable
-private fun StepButton(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun StepButton(label: String, enabled: Boolean, compact: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
-            .size(18.dp)
+            .size(if (compact) 26.dp else 30.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(PanelInset)
             .border(1.dp, PanelEdge.copy(alpha = 0.55f), RoundedCornerShape(2.dp))

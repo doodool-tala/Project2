@@ -2,7 +2,7 @@
 
 **A monophonic analog-modelled synthesizer for Android, built in the spirit of the great 1970s ladder-filter instruments.**
 
-![Monarch D oscillator panel](docs/screenshots/panel-landscape-osc.png)
+![Monarch D oscillator panel](docs/screenshots/phone-landscape-panel-01-osc.png)
 
 Monarch D is an original instrument, not a sample player. Three band-limited
 oscillators feed a saturating four-pole transistor ladder, shaped by analog-style
@@ -12,7 +12,7 @@ account.
 
 [![Android Build](https://github.com/doodool-tala/Project2/actions/workflows/android.yml/badge.svg?branch=main)](https://github.com/doodool-tala/Project2/actions/workflows/android.yml)
 
-[**Download the APK**](apk/MonarchD-1.0.1.apk) · [Listen to the engine](#hear-the-engine) · [Install notes](apk/README.md) · [Controls](#controls) · [Build it yourself](#build-locally)
+[**Download the APK**](apk/MonarchD-1.0.2.apk) · [Listen to the engine](#hear-the-engine) · [Install notes](apk/README.md) · [Controls](#controls) · [Build it yourself](#build-locally)
 
 ---
 
@@ -39,7 +39,7 @@ account.
 
 ## Install
 
-1. Download [`apk/MonarchD-1.0.1.apk`](apk/MonarchD-1.0.1.apk).
+1. Download [`apk/MonarchD-1.0.2.apk`](apk/MonarchD-1.0.2.apk).
 2. Open it on an Android 8.0+ device and allow installation from that source
    when prompted.
 3. Launch **Monarch D**, then press **ENTER THE PANEL**.
@@ -116,22 +116,56 @@ to discover something new. User patches live on the device, not in the cloud.
 | **ENV** | Filter ADS and loudness ADSR, with live contour previews |
 | **PERF** | Glide, mod mix, drift, oscillator 3 modulation, randomise and panic |
 
-<p align="center">
-  <img src="docs/screenshots/panel-landscape-mixer.png" width="49%" alt="Mixer page">
-  <img src="docs/screenshots/panel-landscape-filter.png" width="49%" alt="Filter page">
-</p>
+## Visual verification
+
+The Compose hierarchy is rendered to real bitmaps at three device classes:
+phone portrait (390 × 844 dp), phone landscape (844 × 390 dp) and tablet
+(1280 × 800 dp). All renders are produced by the JVM/Robolectric tests in
+`app/src/test`, not by hand or by a mockup, and all 30 are committed under
+[`docs/screenshots`](docs/screenshots/README.md).
+
+### Phone portrait · 390 × 844 dp
 
 <p align="center">
-  <img src="docs/screenshots/panel-landscape-envelopes.png" width="49%" alt="Envelope page">
-  <img src="docs/screenshots/panel-landscape-performance.png" width="49%" alt="Performance page">
+  <img src="docs/screenshots/phone-portrait-panel-01-osc.png" width="18%" alt="Portrait oscillator panel">
+  <img src="docs/screenshots/phone-portrait-panel-02-mix.png" width="18%" alt="Portrait mixer panel">
+  <img src="docs/screenshots/phone-portrait-panel-03-filter.png" width="18%" alt="Portrait filter panel">
+  <img src="docs/screenshots/phone-portrait-panel-04-envelopes.png" width="18%" alt="Portrait envelope panel">
+  <img src="docs/screenshots/phone-portrait-panel-05-performance.png" width="18%" alt="Portrait performance panel">
 </p>
+
+### Phone landscape · 844 × 390 dp
 
 <p align="center">
-  <img src="docs/screenshots/panel-portrait-osc.png" width="46%" alt="Portrait layout">
+  <img src="docs/screenshots/phone-landscape-panel-01-osc.png" width="19%" alt="Landscape oscillator panel">
+  <img src="docs/screenshots/phone-landscape-panel-02-mix.png" width="19%" alt="Landscape mixer panel">
+  <img src="docs/screenshots/phone-landscape-panel-03-filter.png" width="19%" alt="Landscape filter panel">
+  <img src="docs/screenshots/phone-landscape-panel-04-envelopes.png" width="19%" alt="Landscape envelope panel">
+  <img src="docs/screenshots/phone-landscape-panel-05-performance.png" width="19%" alt="Landscape performance panel">
 </p>
 
-The screenshots above are real renders of the Compose UI, captured by the
-Robolectric render tests in CI — not mockups.
+### Tablet · 1280 × 800 dp
+
+<p align="center">
+  <img src="docs/screenshots/tablet-panel-01-osc.png" width="19%" alt="Tablet oscillator panel">
+  <img src="docs/screenshots/tablet-panel-02-mix.png" width="19%" alt="Tablet mixer panel">
+  <img src="docs/screenshots/tablet-panel-03-filter.png" width="19%" alt="Tablet filter panel">
+  <img src="docs/screenshots/tablet-panel-04-envelopes.png" width="19%" alt="Tablet envelope panel">
+  <img src="docs/screenshots/tablet-panel-05-performance.png" width="19%" alt="Tablet performance panel">
+</p>
+
+### Sheets, help, library and onboarding
+
+<p align="center">
+  <img src="docs/screenshots/phone-portrait-settings.png" width="18%" alt="Settings and about">
+  <img src="docs/screenshots/phone-landscape-help.png" width="30%" alt="How to play guide">
+  <img src="docs/screenshots/tablet-library.png" width="34%" alt="Patch library">
+  <img src="docs/screenshots/tablet-intro.png" width="34%" alt="First-run guide">
+</p>
+
+Every bitmap is an audit of the shipping Compose UI, including the separate
+`ModalBottomSheet` windows used by Settings, Help and the Patch Library. The
+renderer composites those dialog windows into the same frame as the instrument.
 
 ## Controls
 
@@ -153,7 +187,7 @@ On first launch, a short engraved guide introduces the panel and the three
 gestures that matter: touch, swipe and play.
 
 <p align="center">
-  <img src="docs/screenshots/panel-portrait-intro.png" width="36%" alt="Monarch D first-run guide">
+  <img src="docs/screenshots/phone-portrait-intro.png" width="36%" alt="Monarch D first-run guide">
 </p>
 
 ## Build locally
@@ -241,12 +275,16 @@ from `AudioTrack.getMinBufferSize` and the device's preferred frame count.
   C1–C7, oscillator harmonic signatures, the ladder sweep and resonance peak,
   ADSR and filter-contour timing, drift, detune, last-note priority, glide,
   click-free note changes, DC offset and preset headroom.
-- `PanelLandscapeScreenshotTest` renders all five pages at 900×420 dp.
-- `PanelPortraitScreenshotTest` renders the portrait panel at 390×780 dp.
+- `PhonePortraitScreenshotTest` renders all five panel pages plus Settings/About,
+  Help, the Patch Library and the first-run intro at 390×844 dp.
+- `PhoneLandscapeScreenshotTest` renders the same surfaces at 844×390 dp.
+- `TabletScreenshotTest` renders them at 1280×800 dp.
 
-Both screenshot tests use Robolectric native graphics and write to
-`app/build/screenshots`. They are regular tests; no emulator or device is
-needed.
+The fifteen render tests use Robolectric native graphics and write to
+`app/build/screenshots`; the audited copies are committed in `docs/screenshots`.
+They are regular JVM tests; no emulator or device is needed. The renderer also
+composites Compose's separate dialog windows so the sheets are captured with the
+instrument rather than as panel-only images.
 
 ### Offline audio results
 

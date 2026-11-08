@@ -22,7 +22,7 @@ val PanelInset = Color(0xFF101015)
 
 val Cream = Color(0xFFEDE3CF)
 val CreamDim = Color(0xFFB5A993)
-val CreamFaint = Color(0x59EDE3CF)
+val CreamFaint = Color(0xFF8E8474)
 
 val Amber = Color(0xFFE5A54D)
 val AmberBright = Color(0xFFFFCB7C)

@@ -1,6 +1,6 @@
 # Monarch D — installable APK
 
-`MonarchD-1.0.1.apk` is a signed release build of the app in this repository.
+`MonarchD-1.0.2.apk` is a signed release build of the app in this repository.
 
 ## Install on Android
 
@@ -18,4 +18,4 @@ The **Android Build** GitHub Actions workflow tests and builds this APK on every
 push to `main`, then publishes the exact build artifact and its SHA-256 checksum
 back to this directory. The `Publish APK to main` workflow is a manual fallback.
 The current file is therefore traceable to a green CI run, not a hand-built
-binary. Its checksum is in `MonarchD-1.0.1.apk.sha256`.
+binary. Its checksum is in `MonarchD-1.0.2.apk.sha256`.

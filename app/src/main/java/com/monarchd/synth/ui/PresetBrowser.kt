@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -108,12 +110,18 @@ fun PatchLibrarySheet(
         scrimColor = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.62f),
         dragHandle = { BottomSheetDefaults.DragHandle(color = CreamFaint) }
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 18.dp)
-                .padding(bottom = 26.dp)
+        Box(
+            Modifier.fillMaxWidth().fillMaxHeight(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                Modifier
+                    .widthIn(max = 760.dp)
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .padding(horizontal = 18.dp)
+                    .padding(bottom = 18.dp)
+            ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -132,12 +140,12 @@ fun PatchLibrarySheet(
                         letterSpacing = 1.3.sp
                     )
                 }
-                IconButton(onClick = onDismiss, modifier = Modifier.size(30.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(44.dp)) {
                     Icon(
                         Icons.Outlined.Close,
                         contentDescription = "Close",
                         tint = CreamDim,
-                        modifier = Modifier.size(17.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -162,7 +170,7 @@ fun PatchLibrarySheet(
             LazyColumn(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 180.dp, max = 350.dp),
+                    .weight(1f),
                 verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 items(filtered, key = { preset -> "${preset.name}-${preset.category}-${preset.isUser}" }) { preset ->
@@ -219,6 +227,7 @@ fun PatchLibrarySheet(
                     fontSize = 7.5.sp,
                     letterSpacing = 1.2.sp
                 )
+            }
             }
         }
     }
@@ -306,6 +315,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
                     .fillMaxWidth()
                     .background(PanelInset, RoundedCornerShape(4.dp))
                     .border(1.dp, PanelEdge.copy(alpha = 0.6f), RoundedCornerShape(4.dp))
+                    .heightIn(min = 44.dp)
                     .padding(horizontal = 10.dp, vertical = 9.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -346,7 +356,9 @@ private fun FilterChipSmall(label: String, selected: Boolean, onClick: () -> Uni
                 RoundedCornerShape(3.dp)
             )
             .clickable(onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 5.dp)
+            .height(32.dp)
+            .padding(horizontal = 9.dp),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = label,
@@ -436,12 +448,12 @@ private fun PatchRow(
         }
         if (onDelete != null) {
             Spacer(Modifier.width(4.dp))
-            IconButton(onClick = onDelete, modifier = Modifier.size(24.dp)) {
+            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
                 Icon(
                     Icons.Outlined.DeleteOutline,
                     contentDescription = "Delete ${preset.name}",
                     tint = CreamFaint,
-                    modifier = Modifier.size(14.dp)
+                    modifier = Modifier.size(15.dp)
                 )
             }
         }
