@@ -12,8 +12,8 @@ android {
         applicationId = "com.monarchd.synth"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.1"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -61,6 +61,13 @@ android {
         unitTests {
             isIncludeAndroidResources = true
         }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    testLogging {
+        showStandardStreams = true
+        events("passed", "failed", "skipped")
     }
 }
 

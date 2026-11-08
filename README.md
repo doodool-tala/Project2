@@ -12,7 +12,7 @@ account.
 
 [![Android Build](https://github.com/doodool-tala/Project2/actions/workflows/android.yml/badge.svg?branch=main)](https://github.com/doodool-tala/Project2/actions/workflows/android.yml)
 
-[**Download the APK**](apk/MonarchD-1.0.0.apk) · [Install notes](apk/README.md) · [Controls](#controls) · [Build it yourself](#build-locally)
+[**Download the APK**](apk/MonarchD-1.0.1.apk) · [Listen to the engine](#hear-the-engine) · [Install notes](apk/README.md) · [Controls](#controls) · [Build it yourself](#build-locally)
 
 ---
 
@@ -39,17 +39,37 @@ account.
 
 ## Install
 
-1. Download [`apk/MonarchD-1.0.0.apk`](apk/MonarchD-1.0.0.apk).
+1. Download [`apk/MonarchD-1.0.1.apk`](apk/MonarchD-1.0.1.apk).
 2. Open it on an Android 8.0+ device and allow installation from that source
    when prompted.
 3. Launch **Monarch D**, then press **ENTER THE PANEL**.
 
-The committed APK is a signed release build of the source in this repository.
-GitHub Actions rebuilds and uploads the same release variant on every push. The
-release variant is currently signed with the standard Android debug key so that
-CI artifacts are directly installable; see [release signing](#release-signing)
+The committed APK is the release build produced by GitHub Actions from the
+source in this repository. On every push to `main`, the **Android Build**
+workflow tests, builds and uploads the release variant, then publishes that
+exact file and its SHA-256 checksum to `apk/` in a follow-up commit. The release
+variant is currently signed with the standard Android debug key so that CI
+artifacts are directly installable; see [release signing](#release-signing)
 before publishing to Google Play. SHA-256 checksums accompany the APK in
 [`apk/`](apk/).
+
+## Hear the engine
+
+These clips are not samples and were not recorded from a device. Each one was
+rendered offline from the same `SynthVoice` used by the Android audio thread,
+at 48 kHz / 16-bit mono, then peak-normalised to −1 dBFS:
+
+- [**Fat bass with filter sweep**](docs/audio/01-fat-bass-filter-sweep.wav) — the
+  *Model One* patch playing a C2–G2 bass line while the ladder opens and closes.
+- [**Glide lead with mod wheel**](docs/audio/02-glide-lead-mod-wheel.wav) — a
+  legato C-major phrase with portamento, vibrato and filter movement from the
+  performance wheel.
+- [**Resonant ladder**](docs/audio/03-resonant-ladder-self-oscillation.wav) — a
+  high-emphasis sweep that pushes the four-pole ladder into controlled
+  self-oscillation.
+
+See [`docs/audio/README.md`](docs/audio/README.md) for the render settings and
+the measured checks behind the clips.
 
 ## The instrument
 
@@ -159,9 +179,12 @@ Outputs:
 | Release APK | `app/build/outputs/apk/release/app-release.apk` |
 | Panel renders | `app/build/screenshots/*.png` |
 
-`testDebugUnitTest` runs the DSP tests and the Robolectric panel-render tests.
-The render tests draw the real Compose hierarchy to PNGs, so they exercise
-layout, fonts, colours and drawing without an emulator.
+`testDebugUnitTest` runs the DSP tests, the offline audio-engine tests and the
+Robolectric panel-render tests. The render tests draw the real Compose hierarchy
+to PNGs, so they exercise layout, fonts, colours and drawing without an
+emulator. The audio tests render the real voice at 48 kHz and inspect the
+result with YIN pitch detection, FFT analysis and RMS envelopes; they do not
+play a recording back.
 
 ## Continuous integration
 
@@ -170,12 +193,16 @@ Two GitHub Actions workflows live in [`.github/workflows`](.github/workflows):
 - **Android Build** (`android.yml`) runs on pushes to `main`, pull requests and
   manual dispatch. It sets up JDK 17 and the Android SDK, caches and prefetches
   the Robolectric runtime, runs the complete unit-test suite, builds the debug
-  and release APKs, and uploads both APKs and the rendered panel screenshots.
-  Pushing a `v*` tag attaches the release APK to a GitHub Release.
-- **Publish APK to main** (`publish-apk.yml`) is manually dispatched with a
-  version label. It rebuilds the release APK, writes it to
-  `apk/MonarchD-<version>.apk` together with a SHA-256 checksum, and commits
-  both to `main`. The checked-in APK can be refreshed with this workflow.
+  and release APKs, verifies the release signature/package, and uploads both
+  APKs and the rendered panel screenshots. On a push to `main`, it also copies
+  the exact release APK it just built and its SHA-256 into `apk/`, then commits
+  them back to `main`. This makes the download in this README traceable to a
+  green workflow run rather than a hand-built binary. Pushing a `v*` tag
+  attaches the release APK to a GitHub Release.
+- **Publish APK to main** (`publish-apk.yml`) is a manual fallback that
+  rebuilds the release APK, writes it to `apk/MonarchD-<version>.apk` together
+  with a SHA-256 checksum, and commits both to `main`. The automatic publication
+  above is the normal path.
 
 The workflows use the runner's Android SDK and Gradle cache; no signing secrets
 are required for the debug-signed release build.
@@ -186,7 +213,8 @@ are required for the debug-signed release build.
 app/src/main/java/com/monarchd/synth/
 ├── audio/
 │   ├── Dsp.kt              PolyBLEP oscillators, ladder filter, envelopes
-│   └── SynthEngine.kt      AudioTrack stream, voice, note queue, audio focus
+│   ├── SynthVoice.kt       Voice rendering shared by the app and JVM tests
+│   └── SynthEngine.kt      AudioTrack stream, note queue, audio focus
 ├── model/
 │   ├── Patch.kt            Patch data and parameter mappings
 │   ├── Presets.kt          20 factory patches
@@ -209,12 +237,37 @@ from `AudioTrack.getMinBufferSize` and the device's preferred frame count.
 ### Tests
 
 - `DspTest` checks the oscillator/filter/envelope building blocks.
+- `AudioEngineTest` renders the actual voice offline and asserts tuning across
+  C1–C7, oscillator harmonic signatures, the ladder sweep and resonance peak,
+  ADSR and filter-contour timing, drift, detune, last-note priority, glide,
+  click-free note changes, DC offset and preset headroom.
 - `PanelLandscapeScreenshotTest` renders all five pages at 900×420 dp.
 - `PanelPortraitScreenshotTest` renders the portrait panel at 390×780 dp.
 
 Both screenshot tests use Robolectric native graphics and write to
 `app/build/screenshots`. They are regular tests; no emulator or device is
 needed.
+
+### Offline audio results
+
+The current suite renders more than twenty seconds of audio per run. Representative
+measurements from the corrected engine:
+
+| Check | Result |
+| --- | --- |
+| Tuning vs. A440, C1–C7 | worst error **+1.52 cents**; A440 **+0.07 cents** |
+| Sawtooth / square / pulse harmonics | h2/h1 **0.491**; h3/h1 **0.332**; narrow-pulse h2/h1 **0.950** |
+| Triangle h3 / h5 | **0.102 / 0.036** (the waveform’s expected odd harmonics) |
+| Cutoff sweep, 0.15 → 0.90 | spectral centroid **117.4 → 1332.4 Hz** |
+| Emphasis 0.13 → 0.90 | cutoff-band peak grows **0.13 → 63.6** |
+| Attack / decay / release labels | measured **0.105 / 0.215 / 0.190 s** for 0.149 / 0.249 / 0.200 s labels |
+| Oscillator drift | **±3.55 cents** at maximum; **0** when switched off |
+| Factory patch headroom | maximum sample **0.587**; maximum DC **0.0031** |
+
+These are hard assertions in `AudioEngineTest`, not annotations. They caught and
+fixed three real engine faults: a ladder input that was saturating away the
+triangle wave, a missing output DC blocker, and an attack stage that reached its
+peak noticeably before the panel’s labelled time.
 
 ## Release signing
 

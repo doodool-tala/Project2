@@ -120,8 +120,9 @@ internal class MoogLadder(private val sampleRate: Float) {
         var pass = 0
         while (pass < oversample) {
             g += (gTarget - g) * 0.02f
-            // Saturated feedback: the heart of the ladder's musical compression.
-            val u = tanhFast(input - k * state[3])
+            // Saturate the resonance feedback, not the dry input: a clean triangle
+            // must stay a triangle, while a driven filter still compresses musically.
+            val u = input - k * tanhFast(state[3])
             var s = u
             var stage = 0
             while (stage < 4) {
@@ -168,7 +169,9 @@ internal class Adsr(private val sampleRate: Float) {
         releaseSeconds: Float,
         decayOn: Boolean
     ) {
-        attackCoef = coefficient(attackSeconds)
+        // The overshoot target reaches 90% of its travel at roughly the labelled
+        // attack time; the extra 1.4x makes the peak land at the knob's value.
+        attackCoef = coefficient(attackSeconds * 1.4f)
         decayCoef = coefficient(decaySeconds)
         releaseCoef = coefficient(releaseSeconds)
         sustain = sustainLevel.coerceIn(0f, 1f)
@@ -223,6 +226,25 @@ internal class Adsr(private val sampleRate: Float) {
             Stage.IDLE -> value = 0f
         }
         return value
+    }
+}
+
+/** Removes the DC that asymmetric pulse waves and nonlinear stages can leave behind. */
+internal class DcBlocker(private val sampleRate: Float, cutoffHz: Float = 8f) {
+    private val r = exp(-TWO_PI * cutoffHz / sampleRate).toFloat()
+    private var previousInput = 0f
+    private var previousOutput = 0f
+
+    fun process(input: Float): Float {
+        val output = input - previousInput + r * previousOutput
+        previousInput = input
+        previousOutput = output
+        return output
+    }
+
+    fun reset() {
+        previousInput = 0f
+        previousOutput = 0f
     }
 }
 
