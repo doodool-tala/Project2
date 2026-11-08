@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Monarch D</string>
+    <string name="app_tagline">Analog synthesizer</string>
+
+    <string name="nav_presets">Preset library</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_help">How to play</string>
+    <string name="nav_save">Save patch</string>
+    <string name="nav_close">Close</string>
+    <string name="nav_random">Surprise me</string>
+
+    <string name="presets_title">Patch library</string>
+    <string name="presets_search">Search patches</string>
+    <string name="presets_factory">Factory</string>
+    <string name="presets_user">My patches</string>
+    <string name="presets_empty">No saved patches yet. Dial in a sound and save it here.</string>
+    <string name="presets_load">Load</string>
+    <string name="presets_save_current">Save current patch</string>
+    <string name="presets_saved">Patch saved</string>
+    <string name="presets_deleted">Patch deleted</string>
+    <string name="save_dialog_title">Save your patch</string>
+    <string name="save_dialog_label">Patch name</string>
+    <string name="save_dialog_cancel">Cancel</string>
+    <string name="save_dialog_confirm">Save</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="settings_haptics">Haptic feedback</string>
+    <string name="settings_haptics_desc">A subtle tick when you change a physical control.</string>
+    <string name="settings_labels">Show note names</string>
+    <string name="settings_labels_desc">Print C labels on the keyboard.</string>
+    <string name="settings_panic">Release all notes</string>
+    <string name="settings_panic_desc">Silence any stuck note immediately.</string>
+    <string name="settings_audio">Audio engine</string>
+    <string name="settings_about">About Monarch D</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_credits">Monarch D is an original real-time emulation of a classic 1970s monophonic ladder-filter synthesizer. Every sound is generated on your device — no samples, no network.</string>
+
+    <string name="help_title">How to play</string>
+    <string name="help_knobs">Drag a knob up or down to shape the sound. Double-tap to return it to its default.</string>
+    <string name="help_pages">Swipe the panel sideways, or tap the engraved tabs, to move between oscillator, mixer, filter, envelope and performance controls.</string>
+    <string name="help_wheels">The left wheel bends pitch and springs back. The right wheel adds vibrato and filter movement and stays where you leave it.</string>
+    <string name="help_keys">Slide across the keys for a glissando. Use the octave arrows to travel the full range.</string>
+    <string name="help_audio">Headphones or a wired speaker give the lowest latency and the fullest bass.</string>
+    <string name="help_start">Enter the panel</string>
+
+    <string name="common_done">Done</string>
+    <string name="welcome_kicker">A MONOPHONIC ANALOG INSTRUMENT</string>
+    <string name="welcome_title">Monarch D</string>
+    <string name="welcome_subtitle">Three oscillators. One ladder. Infinite attitude.</string>
+</resources>

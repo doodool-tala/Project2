@@ -1,1 +1,253 @@
-# Project2
+# Monarch D
+
+**A monophonic analog-modelled synthesizer for Android, built in the spirit of the great 1970s ladder-filter instruments.**
+
+![Monarch D oscillator panel](docs/screenshots/panel-landscape-osc.png)
+
+Monarch D is an original instrument, not a sample player. Three band-limited
+oscillators feed a saturating four-pole transistor ladder, shaped by analog-style
+envelopes, glide, drift and performance wheels. Every sample is generated on the
+device in real time. There is no network permission, no sample library and no
+account.
+
+[![Android Build](https://github.com/doodool-tala/Project2/actions/workflows/android.yml/badge.svg?branch=main)](https://github.com/doodool-tala/Project2/actions/workflows/android.yml)
+
+[**Download the APK**](apk/MonarchD-1.0.0.apk) · [Install notes](apk/README.md) · [Controls](#controls) · [Build it yourself](#build-locally)
+
+---
+
+## Highlights
+
+- **Three VCOs** with triangle, tri-saw, sawtooth, square, wide pulse and narrow
+  pulse waves; 32', 16', 8', 4' and 2' ranges; fine tune; oscillator 3 can run as
+  a low-frequency modulator and be routed into the filter.
+- **A real ladder** — 24 dB/oct transistor-ladder low-pass with emphasis,
+  keyboard tracking, contour amount and a dedicated ADS filter envelope.
+- **Analog behaviour** — PolyBLEP band-limited oscillators, 2× oversampled
+  nonlinear ladder saturation, drift, glide and a master drive stage.
+- **Performance controls** — monophonic last-note priority, spring-loaded pitch
+  wheel, performance mod wheel, true multi-touch keyboard and glissando.
+- **A tactile panel** — five engraved pages, hand-drawn walnut cheeks, damped
+  knobs, moving scope, peak meter, filter-response and envelope displays, plus
+  a full patch library.
+- **Twenty factory patches** across bass, lead, keys, pad and FX categories, with
+  user-patch saving, search and randomisation.
+- **Responsive** — portrait and landscape layouts, 25 keys on phones and 37 on
+  wide screens, with two octaves of octave shift in either direction.
+- **Private by design** — the only permission is vibration for haptics. The app
+  has no internet permission and stores patches locally.
+
+## Install
+
+1. Download [`apk/MonarchD-1.0.0.apk`](apk/MonarchD-1.0.0.apk).
+2. Open it on an Android 8.0+ device and allow installation from that source
+   when prompted.
+3. Launch **Monarch D**, then press **ENTER THE PANEL**.
+
+The committed APK is a signed release build of the source in this repository.
+GitHub Actions rebuilds and uploads the same release variant on every push. The
+release variant is currently signed with the standard Android debug key so that
+CI artifacts are directly installable; see [release signing](#release-signing)
+before publishing to Google Play. SHA-256 checksums accompany the APK in
+[`apk/`](apk/).
+
+## The instrument
+
+### Oscillators
+
+Three independent voltage-controlled oscillators cover the classic five decade
+ranges, plus a low-frequency mode unique to oscillator 3. Each oscillator has
+its own level in the mixer and its own place in the mix: oscillator 2 can be
+detuned against oscillator 1, and oscillator 3 can broaden or animate the filter.
+The oscillator output is band-limited with PolyBLEP, so high notes stay clean
+without losing the edge of the original waveforms.
+
+### Filter
+
+The four-pole ladder is the centre of the instrument. Cutoff, emphasis and
+contour amount are continuously variable; keyboard tracking can be off, one
+third, two thirds or full. The filter contour is an ADS envelope with a switch
+that removes sustain, while the loudness contour is a full ADSR. High emphasis
+pushed into drive gets you from round rubber bass to a screaming lead.
+
+### Performance
+
+The voice is monophonic with last-note priority, exactly like the instruments
+that inspired it. Glide ties notes together, drift gives every patch a subtle
+analog instability, and the wheels control pitch bend, vibrato and filter
+movement. The keyboard tracks multiple fingers for chords, legato playing and
+true glissando, even though only the newest note speaks.
+
+### Patches
+
+Twenty carefully balanced factory patches are included, from the benchmark
+**Model One** bass and **Rubber Funk** to **Celestial Choir**, **Cosmic Sweep**
+and the clean **Init Patch**. The patch library can search factory sounds, save
+your own patches by name, delete them and generate a random patch when you want
+to discover something new. User patches live on the device, not in the cloud.
+
+## Panel tour
+
+| Page | What lives there |
+| --- | --- |
+| **OSC** | Three VCO cards: waveform, range, tune, level and oscillator 3 → filter |
+| **MIX** | Oscillator, noise and drive levels; master output; signal path readout |
+| **FILTER** | Cutoff, emphasis, contour, keyboard tracking, decay mode and response display |
+| **ENV** | Filter ADS and loudness ADSR, with live contour previews |
+| **PERF** | Glide, mod mix, drift, oscillator 3 modulation, randomise and panic |
+
+<p align="center">
+  <img src="docs/screenshots/panel-landscape-mixer.png" width="49%" alt="Mixer page">
+  <img src="docs/screenshots/panel-landscape-filter.png" width="49%" alt="Filter page">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/panel-landscape-envelopes.png" width="49%" alt="Envelope page">
+  <img src="docs/screenshots/panel-landscape-performance.png" width="49%" alt="Performance page">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/panel-portrait-osc.png" width="46%" alt="Portrait layout">
+</p>
+
+The screenshots above are real renders of the Compose UI, captured by the
+Robolectric render tests in CI — not mockups.
+
+## Controls
+
+- **Knobs** — drag vertically for coarse movement; drag horizontally for fine
+  movement. Double-tap a knob to return it to its default.
+- **Panel** — swipe left or right, or tap the OSC / MIX / FILTER / ENV / PERF
+  tabs. The panel is scrollable in portrait.
+- **Pitch wheel** — drag up or down and release; it springs back to centre.
+- **Mod wheel** — drag up to add vibrato and filter movement; it stays where
+  you leave it.
+- **Keyboard** — touch and slide for glissando; multi-touch plays legato and
+  chords with last-note priority. The octave stepper moves from C1 to C7.
+- **Preset chip** — opens the patch library for searching, saving, deleting and
+  randomising sounds.
+- **Info / gear** — the in-app guide and settings for haptics, note labels,
+  audio status and panic.
+
+On first launch, a short engraved guide introduces the panel and the three
+gestures that matter: touch, swipe and play.
+
+<p align="center">
+  <img src="docs/screenshots/panel-portrait-intro.png" width="36%" alt="Monarch D first-run guide">
+</p>
+
+## Build locally
+
+Requirements:
+
+- JDK 17
+- Android SDK platform 35 and build-tools 35 (Android Studio or the command-line
+  tools)
+- `ANDROID_HOME` or `ANDROID_SDK_ROOT` pointing at the SDK
+
+```bash
+./gradlew testDebugUnitTest
+./gradlew assembleDebug
+./gradlew assembleRelease
+```
+
+Outputs:
+
+| Artifact | Path |
+| --- | --- |
+| Debug APK | `app/build/outputs/apk/debug/app-debug.apk` |
+| Release APK | `app/build/outputs/apk/release/app-release.apk` |
+| Panel renders | `app/build/screenshots/*.png` |
+
+`testDebugUnitTest` runs the DSP tests and the Robolectric panel-render tests.
+The render tests draw the real Compose hierarchy to PNGs, so they exercise
+layout, fonts, colours and drawing without an emulator.
+
+## Continuous integration
+
+Two GitHub Actions workflows live in [`.github/workflows`](.github/workflows):
+
+- **Android Build** (`android.yml`) runs on pushes to `main`, pull requests and
+  manual dispatch. It sets up JDK 17 and the Android SDK, caches and prefetches
+  the Robolectric runtime, runs the complete unit-test suite, builds the debug
+  and release APKs, and uploads both APKs and the rendered panel screenshots.
+  Pushing a `v*` tag attaches the release APK to a GitHub Release.
+- **Publish APK to main** (`publish-apk.yml`) is manually dispatched with a
+  version label. It rebuilds the release APK, writes it to
+  `apk/MonarchD-<version>.apk` together with a SHA-256 checksum, and commits
+  both to `main`. The checked-in APK can be refreshed with this workflow.
+
+The workflows use the runner's Android SDK and Gradle cache; no signing secrets
+are required for the debug-signed release build.
+
+## Project layout
+
+```text
+app/src/main/java/com/monarchd/synth/
+├── audio/
+│   ├── Dsp.kt              PolyBLEP oscillators, ladder filter, envelopes
+│   └── SynthEngine.kt      AudioTrack stream, voice, note queue, audio focus
+├── model/
+│   ├── Patch.kt            Patch data and parameter mappings
+│   ├── Presets.kt          20 factory patches
+│   └── PatchRepository.kt  Local patch/settings persistence
+├── ui/
+│   ├── SynthApp.kt         Root layout, top bar, dock, background
+│   ├── PanelPages.kt       Five panel pages and pager
+│   ├── components/         Knobs, switches, graphs, keyboard, wheels
+│   ├── PresetBrowser.kt    Patch library
+│   ├── SettingsSheets.kt   Guide, intro and settings
+│   └── theme/              Colours, type and instrument styling
+└── SynthViewModel.kt       State, engine lifecycle, patch actions
+```
+
+The audio thread is separate from the UI, uses
+`THREAD_PRIORITY_URGENT_AUDIO`, and requests audio focus. Output is stereo
+32-bit float at the device's native sample rate, with a low-latency buffer sized
+from `AudioTrack.getMinBufferSize` and the device's preferred frame count.
+
+### Tests
+
+- `DspTest` checks the oscillator/filter/envelope building blocks.
+- `PanelLandscapeScreenshotTest` renders all five pages at 900×420 dp.
+- `PanelPortraitScreenshotTest` renders the portrait panel at 390×780 dp.
+
+Both screenshot tests use Robolectric native graphics and write to
+`app/build/screenshots`. They are regular tests; no emulator or device is
+needed.
+
+## Release signing
+
+`app/build.gradle.kts` signs the release variant with the standard Android debug
+key so that CI output can be installed directly. For a Play Store release:
+
+1. Create an upload keystore and keep it out of the repository.
+2. Replace the `signingConfig = signingConfigs.getByName("debug")` line with a
+   `signingConfigs { create("release") { ... } }` block that reads the keystore
+   from environment variables or a local properties file.
+3. Increment `versionCode` / `versionName`.
+4. Build a signed App Bundle (`bundleRelease`) and upload it to the Play Console.
+
+Never commit a keystore or its passwords. The `apk/` directory is only for
+convenient, directly installable development builds.
+
+## Scope and limitations
+
+This release is the instrument itself: monophonic synthesis, three oscillators,
+one ladder filter, two contours and a performance keyboard. It does not include
+MIDI/USB input, audio recording, or built-in reverb and delay effects. The
+factory patches are designed to sound good dry and to take external effects
+beautifully.
+
+## License and trademarks
+
+The application source is released under the [MIT License](LICENSE). The bundled
+Barlow Condensed typeface is licensed under the SIL Open Font License 1.1; the
+license text is included at
+`app/src/main/assets/licenses/OFL-BarlowCondensed.txt`.
+
+Monarch D is an independent project and is not affiliated with, endorsed by, or
+licensed by Moog Music Inc. or Arturia. Product names from those companies are
+trademarks of their respective owners. All code, graphics, presets and panel
+design in this repository are original work inspired by the classic
+transistor-ladder architecture.
